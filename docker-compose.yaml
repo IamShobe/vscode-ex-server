@@ -1,0 +1,33 @@
+version: '3'
+
+services:
+  proxy:
+    image: nginx
+    ports:
+      - 80:80
+      - 443:443
+    depends_on:
+      - server
+    volumes:
+      - ./configs/conf.d/:/etc/nginx/conf.d/
+      - ./certs/:/etc/ssl/private/
+
+  filewatcher:
+    build:
+      dockerfile: ./watcher/Dockerfile
+      context: .
+    depends_on:
+      - server
+    volumes:
+      - /mnt/extensions/:/app/exts/
+      - .:/app
+
+  server:
+    build:
+      dockerfile: ./server/Dockerfile
+      context: .
+    ports:
+      - 8443:8443
+    volumes:
+      - /mnt/extensions/:/app/exts/
+      - .:/app

@@ -1,0 +1,7 @@
+node_modules/
+backend/shaloms_light/static/
+*.pyc
+*.vsix
+
+.vscode/
+.idea/
