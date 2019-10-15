@@ -1,4 +1,3 @@
-import os
 from pathlib import Path
 
 import flask
@@ -6,14 +5,13 @@ from flask import Response, send_file
 from attrdict import AttrDict
 
 from indexer import Indexer
-from extension import Extension
 from controller import create_wrapper, count
 
 app = flask.Flask(__name__)
 
 TEXT_FILTER_TYPE = 10
 
-INDEXER = Indexer("exts")
+INDEXER = Indexer("/app/exts")
 
 
 def get_text_filter(criterias):

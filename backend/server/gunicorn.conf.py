@@ -1,4 +1,4 @@
-from main import index_packages, INDEXER
+from main import index_packages
 from logging import getLogger
 
 bind = "0.0.0.0:8443"

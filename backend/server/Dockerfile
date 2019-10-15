@@ -7,6 +7,7 @@ RUN apk --update add --virtual build-dependencies libffi-dev openssl-dev build-b
 
 COPY requirements.txt requirements.txt
 RUN pip install -r requirements.txt
-COPY . .
 
-CMD python listener.py
+COPY ./backend/server/* ./
+
+CMD gunicorn -c gunicorn.conf.py main:app --access-logfile '-'

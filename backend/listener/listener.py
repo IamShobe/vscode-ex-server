@@ -3,7 +3,7 @@ import inotify.adapters
 
 def main():
     notify = inotify.adapters.Inotify()
-    notify.add_watch("exts")
+    notify.add_watch("/app/exts")
 
     for event in notify.event_gen(yield_nones=False):
         (_, type_names, path, filename) = event

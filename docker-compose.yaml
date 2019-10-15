@@ -14,20 +14,18 @@ services:
 
   filewatcher:
     build:
-      dockerfile: ./watcher/Dockerfile
+      dockerfile: ./backend/listener/Dockerfile
       context: .
     depends_on:
       - server
     volumes:
       - /mnt/extensions/:/app/exts/
-      - .:/app
 
   server:
     build:
-      dockerfile: ./server/Dockerfile
+      dockerfile: ./backend/server/Dockerfile
       context: .
     ports:
       - 8443:8443
     volumes:
       - /mnt/extensions/:/app/exts/
-      - .:/app
