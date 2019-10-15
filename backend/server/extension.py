@@ -1,13 +1,14 @@
+"""Extension module."""
 import uuid
 from zipfile import ZipFile
 
 from bs4 import BeautifulSoup
 from cached_property import cached_property
 
-def open_zip(f):
+def open_zip(func):
     def inner_function(self, *args, **kwargs):
         with ZipFile(self.filename) as zip_f:
-            return f(self, zip_f, *args, **kwargs)
+            return func(self, zip_f, *args, **kwargs)
 
     return inner_function
 
@@ -100,17 +101,10 @@ class Extension:
     @open_zip
     def license(self, zip_file):
         with zip_file.open(self.assets[LICENSE]) as f:
-            license = f.read()
+            zip_license = f.read()
 
-        return license
+        return zip_license
 
-    @cached_property
-    @open_zip
-    def details(self, zip_file):
-        with zip_file.open(self.assets[DETAILS]) as f:
-            details = f.read()
-
-        return details
     @cached_property
     @open_zip
     def details(self, zip_file):
@@ -130,7 +124,3 @@ class Extension:
 
     def __hash__(self):
         return hash(uuid.uuid3(uuid.NAMESPACE_OID, self.name))
-
-if __name__ == '__main__':
-    abc = Extension("exts/ecmel.vscode-html-css-0.2.3.vsix")
-    import ipdb; ipdb.set_trace()

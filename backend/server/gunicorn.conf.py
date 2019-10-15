@@ -1,3 +1,4 @@
+# pylint: skip-file
 from main import index_packages
 from logging import getLogger
 
