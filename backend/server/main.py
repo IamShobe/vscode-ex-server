@@ -5,6 +5,7 @@ from flask import Response, send_file
 from attrdict import AttrDict
 
 from indexer import Indexer
+from extension import Extension
 from controller import create_wrapper, count
 
 app = flask.Flask(__name__)
@@ -111,15 +112,21 @@ def query_extentions():
 def index_new_extension():
     request = AttrDict(flask.request.json)
     if "IN_CREATE" in request.type_names or "IN_MODIFY" in request.type_names:
-        ext = extension(path(request.exts) / request.filename)
+        ext = Extension(Path(request.exts) / request.filename)
         INDEXER.index_package(ext)
 
     if "IN_DELETE" in request.type_names:
-        ext = extension(path(request.exts) / request.filename)
+        ext = Extension(Path(request.exts) / request.filename)
         INDEXER.reset()
 
     print(f"new extension update: {request}")
     return "OK"
+
+
+@app.route("/")
+def main():
+    return flask.render_template("index.html")
+
 
 def index_packages():
     INDEXER.index_packages()

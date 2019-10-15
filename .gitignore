@@ -1,7 +1,7 @@
 node_modules/
+__pycache__/
 *.pyc
 *.vsix
 
 .vscode/
 .idea/
-__pychache__/

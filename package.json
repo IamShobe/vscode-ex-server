@@ -1,5 +1,5 @@
 {
-  "name": "vscode-ext-server",
+  "name": "vscode_ext_server",
   "version": "0.1.0",
   "main": "frontend/index.js",
   "scripts": {
@@ -27,7 +27,7 @@
     "uglifyjs-webpack-plugin": "^1.2.7",
     "webpack": "^4.29.6",
     "webpack-cli": "^3.3.0",
-    "webpack-dev-server": "^3.8.0"
+    "webpack-dev-server": "^3.8.2"
   },
   "dependencies": {
     "@material-ui/core": "^4.3.3",
@@ -35,9 +35,9 @@
     "axios": "^0.19.0",
     "cheeseburger-menu": "0.0.13",
     "classnames": "^2.2.6",
-    "react": "^16.8.6",
+    "react": "^16.10.2",
     "react-burger-menu": "^2.6.5",
-    "react-dom": "^16.8.6",
+    "react-dom": "^16.10.2",
     "react-material-ripple": "^0.1.1",
     "react-reveal": "^1.2.2",
     "react-sticky": "^6.0.3",

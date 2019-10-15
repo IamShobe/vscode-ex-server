@@ -3,7 +3,7 @@ const path = require("path");
 module.exports = {
     devtool: "eval-source-map",
     output: {
-        library: 'vscode-ext-server',
+        library: 'vscode_ext_server',
         filename: "bundle.js",
         path: path.resolve(__dirname, 'backend/server/static')
     },
@@ -13,7 +13,7 @@ module.exports = {
         watchContentBase: true,
         host: "0.0.0.0",
         disableHostCheck: true,
-        port: 9002,
+        port: 9010,
         proxy: {
             '!(/static/**/**.*)': {
                 target: 'http://0.0.0.0:8443',

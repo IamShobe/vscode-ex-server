@@ -7,6 +7,6 @@ RUN apk --update add --virtual build-dependencies libffi-dev openssl-dev build-b
 
 COPY requirements.txt requirements.txt
 RUN pip install -r requirements.txt
-COPY ./backend/listener/* ./
+ADD ./backend/listener/ ./
 
 CMD python listener.py
