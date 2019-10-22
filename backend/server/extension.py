@@ -22,6 +22,7 @@ ICON = "Microsoft.VisualStudio.Services.Icons.Default"
 class Extension:
     def __init__(self, filename):
         self.filename = filename
+        self.indexed_by = []
 
     @property
     def name(self):
@@ -71,11 +72,6 @@ class Extension:
         return self.xml_tree.find("metadata").find("categories").text\
             .split(",")
 
-    @cached_property
-    @open_zip
-    def icon(self, zip_file):
-        with zip_file.open(self.icon_path) as icon_file:
-            return icon_file.read()
 
     @property
     def assets(self):
@@ -83,6 +79,12 @@ class Extension:
             elem["type"]: elem["path"]
             for elem in self.xml_tree.find("assets").find_all("asset")
         }
+
+    @cached_property
+    @open_zip
+    def icon(self, zip_file):
+        with zip_file.open(self.icon_path) as icon_file:
+            return icon_file.read()
 
     @open_zip
     def read_file(self, zip_file, file_path):
@@ -121,6 +123,9 @@ class Extension:
 
         return manifest
 
-
     def __hash__(self):
-        return hash(uuid.uuid3(uuid.NAMESPACE_OID, self.name))
+        return hash(uuid.uuid3(uuid.NAMESPACE_OID, str(self.filename)))
+
+    def __eq__(self, other):
+        return hash(self) == hash(other)
+

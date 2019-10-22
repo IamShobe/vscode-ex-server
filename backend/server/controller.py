@@ -21,8 +21,8 @@ def count(exts):
 
 def create_wrapper(extension):
     base_url = \
-        f"https://marketplace.visualstudio.com/extensions/" \
-        f"{extension.publisher}/{extension.name}/{extension.version}"
+        f"https://marketplace.visualstudio.com/extensions" \
+        "/{extension.publisher}/{extension.name}/{extension.version}"
 
 
     properties = []

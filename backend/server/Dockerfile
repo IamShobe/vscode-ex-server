@@ -10,4 +10,4 @@ RUN pip install -r requirements.txt
 
 ADD ./backend/server/ ./
 
-CMD gunicorn -c gunicorn.conf.py main:app --access-logfile '-'
+CMD gunicorn -k uvicorn.workers.UvicornWorker -c gunicorn.conf.py main:app --access-logfile '-'

@@ -13,14 +13,16 @@ services:
       - ./certs/:/etc/ssl/private/
 
   filewatcher:
-    image: elran777/vscode-ex-server_filewatcher
-    depends_on:
-      - server
+    build:
+      dockerfile: ./backend/listener/Dockerfile
+      context: .
     volumes:
       - /mnt/extensions/:/app/exts/
 
   server:
-    image: elran777/vscode-ex-server_server
+    build:
+      dockerfile: ./backend/server/Dockerfile
+      context: .
     ports:
       - 8443:8443
     volumes:

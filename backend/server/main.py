@@ -1,19 +1,25 @@
+
+from enum import Enum
+from typing import List
 from pathlib import Path
 
-import flask
-from flask import Response, send_file
-from attrdict import AttrDict
+from fastapi import FastAPI
+from pydantic import BaseModel, Schema
+from starlette.responses import FileResponse, Response
 
 from indexer import Indexer
 from extension import Extension
 from controller import create_wrapper, count
 
-app = flask.Flask(__name__)
+
+app = FastAPI(version="0.2.0")
 
 TEXT_FILTER_TYPE = 10
 
 INDEXER = Indexer("/app/exts")
 
+def index_packages():
+    INDEXER.index_packages()
 
 def get_text_filter(criterias):
     for criteria in criterias:
@@ -23,58 +29,73 @@ def get_text_filter(criterias):
     return ""
 
 
-@app.route("/extensions/<publisher>/<package>/<"
-           "version>/Microsoft.VisualStudio.Services.Icons.Default")
-def get_package_icon(publisher, package, version):
+
+@app.get("/extensions/{publisher}/{package}/{version}/Microsoft.VisualStudio.Services.Icons.Default", 
+         operation_id="getIcon", responses={200: {'content': {'image/png': {}}}})
+async def get_package_icon(publisher: str, package: str, version: str):
     extension = INDEXER.get_extension(publisher, package, version)
-    return Response(extension.icon,
-                    mimetype=f'image/{Path(extension.icon_path).suffix[1:]}')
+    print(Path(extension.icon_path).suffix[1:])
+    return Response(content=extension.icon,
+                    media_type=f'image/{Path(extension.icon_path).suffix[1:]}')
 
 
-@app.route("/extensions/<publisher>/<package>/<"
-           "version>/Microsoft.VisualStudio.Code.Manifest")
-def get_package_manifest(publisher, package, version):
+@app.get("/extensions/{publisher}/{package}/{version}/Microsoft.VisualStudio.Code.Manifest",
+         operation_id="getManifest")
+async def get_package_manifest(publisher: str, package: str, version: str):
     extension = INDEXER.get_extension(publisher, package, version)
     return extension.code_manifest
 
 
-@app.route("/extensions/<publisher>/<package>/<"
-           "version>/Microsoft.VisualStudio.Services.Content.Details")
-def get_package_details(publisher, package, version):
+@app.get("/extensions/{publisher}/{package}/{version}/Microsoft.VisualStudio.Services.Content.Details",
+         operation_id="getDetails", responses={200: {'content': {'text/markdown': {}}}})
+async def get_package_details(publisher: str, package: str, version: str):
     extension = INDEXER.get_extension(publisher, package, version)
     return extension.details
 
 
-@app.route("/extensions/<publisher>/<package>/<"
-           "version>/Microsoft.VisualStudio.Services.Content.License")
-def get_package_license(publisher, package, version):
+@app.get("/extensions/{publisher}/{package}/{version}/Microsoft.VisualStudio.Services.Content.License",
+         operation_id="getLicense", responses={200: {'content': {'plain/text': {}}}})
+async def get_package_license(publisher: str, package: str, version: str):
     extension = INDEXER.get_extension(publisher, package, version)
     return extension.license
 
-
-@app.route("/extensions/<publisher>/<package>/<"
-           "version>/Microsoft.VisualStudio.Services.VSIXPackage")
-def get_package(publisher, package, version):
+@app.get("/extensions/{publisher}/{package}/{version}/Microsoft.VisualStudio.Services.VSIXPackage",
+         operation_id="getPackage", responses={200: {'content': {'application/octet-stream': {}}}})
+async def get_package(publisher: str, package: str, version: str):
     extension = INDEXER.get_extension(publisher, package, version)
-    return send_file(extension.filename)
+    return FileResponse(extension.filename)
 
 
-@app.route("/_apis/public/gallery/extensionquery", methods=["GET", "POST"])
-def query_extentions():
-    text_filter = ""
-    page_number = 1
-    page_size = 50
+class CriteriaModel(BaseModel):
+    filterType: int = TEXT_FILTER_TYPE
+    value: str = ""
 
-    try:
-        request = AttrDict(flask.request.json)
-        main_filter = request.filters[0]
+class FilterModel(BaseModel):
+    pageNumber: int = Schema(1, ge=1)
+    pageSize: int = 50
+    sortBy: int = 0
+    sortOrder: int = 0
+    criteria: List[CriteriaModel] = [CriteriaModel()]
+    flags: int = 914
+
+class QueryModel(BaseModel):
+    filters: List[FilterModel] = Schema([FilterModel()], min_items=1, max_items=1)
+
+
+@app.post("/_apis/public/gallery/extensionquery", 
+          operation_id="queryExtensions")
+def query_extentions(query: QueryModel):
+    if len(query.filters) == 0:
+        text_filter = ""
+        page_size = 50
+        page_number = 1
+
+    else:
+        main_filter = query.filters[0]
         page_number = main_filter.pageNumber
         page_size = main_filter.pageSize
         text_filter = get_text_filter(main_filter.criteria)
-
-    except:
-        pass
-
+    
     try:
         exts = INDEXER.trie.get(text_filter)
 
@@ -108,31 +129,38 @@ def query_extentions():
         ]
     }
 
-@app.route('/index_new', methods=["POST"])
-def index_new_extension():
-    request = AttrDict(flask.request.json)
-    if "IN_CREATE" in request.type_names or "IN_MODIFY" in request.type_names:
-        ext = Extension(Path(request.exts) / request.filename)
+
+class AcceptedTypes(str, Enum):
+    in_close_write = "IN_CLOSE_WRITE"
+    in_delete = "IN_DELETE"
+
+
+class Update(BaseModel):
+    path: str
+    filename: str
+    type_names: List[AcceptedTypes]
+
+
+class IndexNewResponse(BaseModel):
+    status: str
+
+@app.post('/index_new', response_model=IndexNewResponse,
+          operation_id="indexExtension")
+def index_new_extension(update: Update):
+    """Force Indexing new extension"""
+    ext = Extension(Path(update.path) / update.filename)
+    if "IN_CLOSE_WRITE" in update.type_names:
         INDEXER.index_package(ext)
 
-    if "IN_DELETE" in request.type_names:
-        ext = Extension(Path(request.exts) / request.filename)
-        INDEXER.reset()
+    if "IN_DELETE" in update.type_names:
+        if ext not in INDEXER.extensions_set:
+            return {"status": "OK"}
 
-    print(f"new extension update: {request}")
-    return "OK"
+        extensions_list = list(INDEXER.extensions_set)
+        index = extensions_list.index(ext)
 
+        INDEXER.remove_package(extensions_list[index])  # get actual copy
 
-@app.route("/")
-def main():
-    return flask.render_template("index.html")
-
-
-def index_packages():
-    INDEXER.index_packages()
+    return {"status": "OK"}
 
 
-if __name__ == '__main__':
-    index_packages()
-    app.run(port=8443, host='0.0.0.0')
-            # ssl_context=('server.crt', 'server.key'),
