@@ -57,7 +57,7 @@ class Extension:
 
     @cached_property
     def xml_tree(self):
-        return BeautifulSoup(self.manifest, "lxml")
+        return BeautifulSoup(self.manifest, "html.parser")
 
     @property
     def icon_path(self):

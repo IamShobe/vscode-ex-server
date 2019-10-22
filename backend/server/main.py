@@ -12,7 +12,7 @@ from extension import Extension
 from controller import create_wrapper, count
 
 
-app = FastAPI(version="0.2.0")
+app = FastAPI(title="VSCode Extensions Server", version="0.2.0")
 
 TEXT_FILTER_TYPE = 10
 
@@ -141,10 +141,11 @@ class Update(BaseModel):
     type_names: List[AcceptedTypes]
 
 
-class IndexNewResponse(BaseModel):
+class StatusResponse(BaseModel):
     status: str
 
-@app.post('/index_new', response_model=IndexNewResponse,
+
+@app.post('/index_new', response_model=StatusResponse,
           operation_id="indexExtension")
 def index_new_extension(update: Update):
     """Force Indexing new extension"""
@@ -164,3 +165,7 @@ def index_new_extension(update: Update):
     return {"status": "OK"}
 
 
+@app.post("/reset_index", response_model=StatusResponse)
+def reset():
+    INDEXER.reset()
+    return {"status": "OK"}
