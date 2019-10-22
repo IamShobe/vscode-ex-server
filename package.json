@@ -1,12 +1,12 @@
 {
   "name": "vscode_ext_server",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "main": "frontend/index.js",
   "scripts": {
     "build": "webpack --config webpack.config.js --mode development",
     "start:dev": "webpack-dev-server"
   },
-  "author": "Elran Shefer, Ariel Domb",
+  "author": "Elran Shefer",
   "license": "MIT",
   "devDependencies": {
     "@babel/cli": "^7.1.0",
