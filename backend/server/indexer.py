@@ -12,7 +12,6 @@ LEGAL_CHARS = 'abcdefghijklmnopqrstuvwxyz' \
               '.*,-+!@$%^&_ '
 
 
-
 LOGGER = getLogger("app")
 
 
