@@ -1,0 +1,31 @@
+version: '3'
+
+services:
+  proxy:
+    image: nginx
+    ports:
+      - 80:80
+      - 443:443
+    depends_on:
+      - server
+    volumes:
+      - ./configs/conf.d/:/etc/nginx/conf.d/
+      - ./certs/:/etc/ssl/private/
+
+  filewatcher:
+    build:
+      dockerfile: ./backend/listener/Dockerfile
+      context: .
+    image: elran777/vscode-ex-server_filewatcher
+    volumes:
+      - /mnt/extensions/:/app/exts/
+
+  server:
+    build:
+      dockerfile: ./backend/server/Dockerfile
+      context: .
+    image: elran777/vscode-ex-server_server
+    ports:
+      - 8443:8443
+    volumes:
+      - /mnt/extensions/:/app/exts/

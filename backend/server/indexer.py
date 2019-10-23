@@ -4,7 +4,8 @@ from pathlib import Path
 from logging import getLogger
 from contextlib import contextmanager
 
-from extension import Extension
+from .extension import Extension
+from .extension_pack import ExtensionPack
 
 LEGAL_CHARS = 'abcdefghijklmnopqrstuvwxyz' \
               'ABCDEFGHIJKLMNOPQRSTUVWXYZ' \
@@ -76,7 +77,7 @@ class Trie:
                 self.add(element, word)
                 successes.append(word)
 
-        return successes
+        return set(successes)
 
     def _get(self, string, original_string):
         if len(string) == 0:
@@ -97,39 +98,45 @@ class Indexer:
         self.start_dir = start_dir
         self.trie = Trie()
         self.extensions = {}
-        self.extensions_set = set()
+
+        self.extension_packs = set()
+        self.filename_to_extension_pack = {}
 
     def reset(self):
         self.trie = Trie()
         self.extensions = {}
+        self.extension_packs = set()
+        self.filename_to_extension_pack = {}
+
         self.index_packages()
-        self.extensions_set = set()
 
     def index_package_in_paths(self, extension):
-        self.extensions_set.add(extension)
         if extension.publisher not in self.extensions:
             self.extensions[extension.publisher] = {}
 
         if extension.name not in self.extensions[extension.publisher]:
-            self.extensions[extension.publisher][extension.name] = {}
+            self.extensions[extension.publisher][extension.name] = \
+                ExtensionPack(publisher=extension.publisher,
+                              name=extension.name)
+            self.extension_packs.add(self.extensions[extension.publisher][extension.name])
 
-        self.extensions[extension.publisher][extension.name][
-            extension.version] = extension
+        extension_pack = self.extensions[extension.publisher][extension.name]
+        extension_pack.add_package(extension)
+        self.filename_to_extension_pack[extension.filename] = extension_pack
+        return extension_pack
 
     def index_package(self, extension):
         print(f"Indexing {extension.filename}....", flush=True)
         LOGGER.debug("Keywords: ")
-        self.trie.add(extension, extension.name)
-        self.index_package_in_paths(extension)
+        extension_pack = self.index_package_in_paths(extension)
 
-        index_list = []
+        index_list = [extension.name]
         for sub_name in re.split(r"[ \-,_]", extension.name):
             if len(sub_name) > 0:
                 index_list.append(sub_name)
 
         index_list.append(extension.publisher)
-        for tag in extension.tags:
-            index_list.append(tag)
+        index_list.extend(extension.tags)
 
         index_list.append(extension.display_name)
         index_list.append(extension.description)
@@ -137,14 +144,21 @@ class Indexer:
             if len(sub_name) > 0:
                 index_list.append(sub_name)
 
-        successes = self.trie.add_words(extension, index_list)
-        successes.append(extension.name)
-        extension.indexed_by = successes
+        successes = self.trie.add_words(extension_pack, index_list)
+        extension_pack.indexed_by = extension_pack.indexed_by.union(successes)
+    
+    def search(self, keyword):
+        return self.trie.get(keyword)
 
     def remove_package(self, package):
         print(f"Deleting package {package.filename}", flush=True)
-        self.trie.remove_words(package, package.indexed_by)
-        package.indexed_by = []
+        extension_pack = self.filename_to_extension_pack[package.filename]
+        del self.filename_to_extension_pack[package.filename]
+        extension_pack.remove_package(package)
+        if len(extension_pack) == 0:
+            self.trie.remove_words(package, extension_pack.indexed_by)
+            self.extension_packs.remove(extension_pack)
+
 
     def index_packages(self):
         extensions = [

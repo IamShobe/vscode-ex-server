@@ -7,12 +7,12 @@ from fastapi import FastAPI
 from pydantic import BaseModel, Schema
 from starlette.responses import FileResponse, Response
 
-from indexer import Indexer
-from extension import Extension
-from controller import create_wrapper, count
+from .indexer import Indexer
+from .controller import count
+from .extension import Extension
 
 
-app = FastAPI(title="VSCode Extensions Server", version="0.2.0")
+app = FastAPI(title="VSCode Extensions Server", version="0.3.0")
 
 TEXT_FILTER_TYPE = 10
 
@@ -34,7 +34,6 @@ def get_text_filter(criterias):
          operation_id="getIcon", responses={200: {'content': {'image/png': {}}}})
 async def get_package_icon(publisher: str, package: str, version: str):
     extension = INDEXER.get_extension(publisher, package, version)
-    print(Path(extension.icon_path).suffix[1:])
     return Response(content=extension.icon,
                     media_type=f'image/{Path(extension.icon_path).suffix[1:]}')
 
@@ -97,7 +96,7 @@ def query_extentions(query: QueryModel):
         text_filter = get_text_filter(main_filter.criteria)
     
     try:
-        exts = INDEXER.trie.get(text_filter)
+        exts = INDEXER.search(text_filter)
 
     except:
         exts = []
@@ -108,7 +107,7 @@ def query_extentions(query: QueryModel):
     return {
         "results": [
             {
-                "extensions": [create_wrapper(ext) for ext in to_display],
+                "extensions": [ext.query_data() for ext in to_display],
                 "pagingToken": None,
                 "resultMetadata": [
                     {
@@ -154,13 +153,10 @@ def index_new_extension(update: Update):
         INDEXER.index_package(ext)
 
     if "IN_DELETE" in update.type_names:
-        if ext not in INDEXER.extensions_set:
+        if ext not in INDEXER.filename_to_extension_pack:
             return {"status": "OK"}
 
-        extensions_list = list(INDEXER.extensions_set)
-        index = extensions_list.index(ext)
-
-        INDEXER.remove_package(extensions_list[index])  # get actual copy
+        INDEXER.remove_package(ext)  # get actual copy
 
     return {"status": "OK"}
 

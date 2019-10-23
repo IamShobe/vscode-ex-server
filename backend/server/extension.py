@@ -1,6 +1,8 @@
 """Extension module."""
 import uuid
+from pathlib import Path
 from zipfile import ZipFile
+from datetime import datetime
 
 from bs4 import BeautifulSoup
 from cached_property import cached_property
@@ -22,7 +24,11 @@ ICON = "Microsoft.VisualStudio.Services.Icons.Default"
 class Extension:
     def __init__(self, filename):
         self.filename = filename
-        self.indexed_by = []
+        path = Path(self.filename)
+        stats = path.stat()
+
+        self.created_time = datetime.fromtimestamp(stats.st_ctime).isoformat(timespec='milliseconds') + "Z"
+        self.modified_time = datetime.fromtimestamp(stats.st_mtime).isoformat(timespec='milliseconds') + "Z"
 
     @property
     def name(self):
@@ -129,3 +135,56 @@ class Extension:
     def __eq__(self, other):
         return hash(self) == hash(other)
 
+    @cached_property 
+    def base_url(self):
+        return f"https://marketplace.visualstudio.com/extensions" \
+               f"/{self.publisher}/{self.name}/{self.version}"
+
+    @property
+    def query_data(self):
+        properties = []
+        for key, value in self.properties.items():
+            properties.append({
+                "key": key,
+                "value": value
+            })
+
+        return {
+            "version": self.version,
+            "flags": "validated",
+            "lastUpdated": self.modified_time,
+            "files": [
+                {
+                    "assetType": "Microsoft.VisualStudio.Code.Manifest",
+                    "source": f"{self.base_url}/Microsoft.VisualStudio.Code.Manifest"
+                },
+                {
+                    "assetType": "Microsoft.VisualStudio.Services.Content.Details",
+                    "source": f"{self.base_url}/Microsoft.VisualStudio.Services.Content.Details"
+                },
+                {
+                    "assetType": "Microsoft.VisualStudio.Services.Content.License",
+                    "source": f"{self.base_url}/Microsoft.VisualStudio.Services.Content.License"
+                },
+                {
+                    "assetType": "Microsoft.VisualStudio.Services.Icons.Default",
+                    "source":
+                        f"{self.base_url}/Microsoft.VisualStudio.Services.Icons.Default"
+                },
+                {
+                    "assetType": "Microsoft.VisualStudio.Services.Icons.Small",
+                    "source": f"{self.base_url}/Microsoft.VisualStudio.Services.Icons.Small"
+                },
+                {
+                    "assetType": "Microsoft.VisualStudio.Services.VsixManifest",
+                    "source": f"{self.base_url}/Microsoft.VisualStudio.Services.VsixManifest"
+                },
+                {
+                    "assetType": "Microsoft.VisualStudio.Services.VSIXPackage",
+                    "source": f"{self.base_url}/Microsoft.VisualStudio.Services.VSIXPackage"
+                }
+            ],
+            "properties": properties,
+            "assetUri": self.base_url,
+            "fallbackAssetUri": self.base_url
+            }
