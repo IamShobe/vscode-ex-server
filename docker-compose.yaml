@@ -11,6 +11,7 @@ services:
     volumes:
       - ./configs/conf.d/:/etc/nginx/conf.d/
       - ./certs/:/etc/ssl/private/
+      - /mnt/extensions/:/serve/app/exts/
 
   filewatcher:
     image: elran777/vscode-ex-server_filewatcher
