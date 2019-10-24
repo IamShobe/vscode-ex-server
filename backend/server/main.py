@@ -1,15 +1,16 @@
 
+import json
 from enum import Enum
 from typing import List
 from pathlib import Path
 
 from fastapi import FastAPI
 from pydantic import BaseModel, Schema
-from starlette.responses import FileResponse, Response
+from starlette.responses import FileResponse, Response, RedirectResponse
 
-from .indexer import Indexer
-from .controller import count
-from .extension import Extension
+from indexer import Indexer
+from controller import count
+from extension import Extension
 
 
 app = FastAPI(title="VSCode Extensions Server", version="0.3.0")
@@ -42,7 +43,7 @@ async def get_package_icon(publisher: str, package: str, version: str):
          operation_id="getManifest")
 async def get_package_manifest(publisher: str, package: str, version: str):
     extension = INDEXER.get_extension(publisher, package, version)
-    return extension.code_manifest
+    return json.loads(extension.code_manifest)
 
 
 @app.get("/extensions/{publisher}/{package}/{version}/Microsoft.VisualStudio.Services.Content.Details",
@@ -59,10 +60,12 @@ async def get_package_license(publisher: str, package: str, version: str):
     return extension.license
 
 @app.get("/extensions/{publisher}/{package}/{version}/Microsoft.VisualStudio.Services.VSIXPackage",
-         operation_id="getPackage", responses={200: {'content': {'application/octet-stream': {}}}})
+         operation_id="getPackage")
 async def get_package(publisher: str, package: str, version: str):
     extension = INDEXER.get_extension(publisher, package, version)
-    return FileResponse(extension.filename)
+    print(extension.filename, flush=True)
+    return RedirectResponse(url=f'/serve{extension.filename}')
+    # FileResponse(extension.filename, media_type="application/zip", filename='Microsoft.VisualStudio.Services.VSIXPackage')
 
 
 class CriteriaModel(BaseModel):
@@ -107,7 +110,7 @@ def query_extentions(query: QueryModel):
     return {
         "results": [
             {
-                "extensions": [ext.query_data() for ext in to_display],
+                "extensions": [ext.query_data for ext in to_display],
                 "pagingToken": None,
                 "resultMetadata": [
                     {

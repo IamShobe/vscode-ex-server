@@ -24,11 +24,18 @@ ICON = "Microsoft.VisualStudio.Services.Icons.Default"
 class Extension:
     def __init__(self, filename):
         self.filename = filename
-        path = Path(self.filename)
-        stats = path.stat()
 
-        self.created_time = datetime.fromtimestamp(stats.st_ctime).isoformat(timespec='milliseconds') + "Z"
-        self.modified_time = datetime.fromtimestamp(stats.st_mtime).isoformat(timespec='milliseconds') + "Z"
+    @property
+    def stats(self):
+        return Path(self.filename).stat()
+
+    @property
+    def created_time(self):
+        return datetime.fromtimestamp(self.stats.st_ctime).isoformat(timespec='milliseconds') + "Z"
+
+    @property
+    def modified_time(self):
+        return datetime.fromtimestamp(self.stats.st_mtime).isoformat(timespec='milliseconds') + "Z"
 
     @property
     def name(self):
@@ -140,6 +147,10 @@ class Extension:
         return f"https://marketplace.visualstudio.com/extensions" \
                f"/{self.publisher}/{self.name}/{self.version}"
 
+    @cached_property
+    def download_url(self):
+        return f"https://marketplace.visualstudio.com/serve{self.filename}"
+
     @property
     def query_data(self):
         properties = []
@@ -181,7 +192,7 @@ class Extension:
                 },
                 {
                     "assetType": "Microsoft.VisualStudio.Services.VSIXPackage",
-                    "source": f"{self.base_url}/Microsoft.VisualStudio.Services.VSIXPackage"
+                    "source": self.download_url
                 }
             ],
             "properties": properties,

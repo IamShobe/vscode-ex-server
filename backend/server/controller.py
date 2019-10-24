@@ -4,7 +4,6 @@ from collections import defaultdict
 def count(exts):
     counts = defaultdict(int)
     for ext in exts:
-        print(ext)
         for cat in ext.categories:
             counts[cat] += 1
 

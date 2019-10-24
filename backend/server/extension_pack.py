@@ -28,7 +28,8 @@ class ExtensionPack:
         del self.filename_to_version[package.filename]
         del self.packages[version]
 
-    def category(self):
+    @property
+    def categories(self):
         return self.latest_package.categories
 
     @property
@@ -41,6 +42,7 @@ class ExtensionPack:
         return sorted(list(self.packages.values()),
                       key=lambda package: LooseVersion(package.version), reverse=True)
 
+    @property
     def query_data(self):
         return {
             "publisher": {
@@ -59,7 +61,7 @@ class ExtensionPack:
             "publishedDate": self.latest_package.created_time,
             "releaseDate": self.latest_package.created_time,
             "shortDescription": self.latest_package.description,
-            "versions": [package.query_data() for package in self.sorted_packages],
+            "versions": [package.query_data for package in self.sorted_packages],
             "statistics": [
                 {
                     "statisticName": "install",

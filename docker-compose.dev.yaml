@@ -11,6 +11,7 @@ services:
     volumes:
       - ./configs/conf.d/:/etc/nginx/conf.d/
       - ./certs/:/etc/ssl/private/
+      - /mnt/share/extensions/:/serve/app/exts/
 
   filewatcher:
     build:
@@ -18,7 +19,7 @@ services:
       context: .
     image: elran777/vscode-ex-server_filewatcher
     volumes:
-      - /mnt/extensions/:/app/exts/
+      - /mnt/share/extensions/:/app/exts/
 
   server:
     build:
@@ -28,4 +29,4 @@ services:
     ports:
       - 8443:8443
     volumes:
-      - /mnt/extensions/:/app/exts/
+      - /mnt/share/extensions/:/app/exts/

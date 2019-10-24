@@ -4,8 +4,8 @@ from pathlib import Path
 from logging import getLogger
 from contextlib import contextmanager
 
-from .extension import Extension
-from .extension_pack import ExtensionPack
+from extension import Extension
+from extension_pack import ExtensionPack
 
 LEGAL_CHARS = 'abcdefghijklmnopqrstuvwxyz' \
               'ABCDEFGHIJKLMNOPQRSTUVWXYZ' \
