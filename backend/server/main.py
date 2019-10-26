@@ -5,15 +5,25 @@ from typing import List
 from pathlib import Path
 
 from fastapi import FastAPI
+from fastapi.openapi.docs import (
+    get_redoc_html,
+    get_swagger_ui_html,
+    get_swagger_ui_oauth2_redirect_html,
+)
 from pydantic import BaseModel, Schema
-from starlette.responses import FileResponse, Response, RedirectResponse
+from starlette.requests import Request
+from starlette.staticfiles import StaticFiles
+from starlette.responses import FileResponse, Response, RedirectResponse, HTMLResponse
+
 
 from indexer import Indexer
 from controller import count
 from extension import Extension
 
 
-app = FastAPI(title="VSCode Extensions Server", version="0.3.0")
+app = FastAPI(title="VSCode Extensions Server", version="0.3.1",
+              docs_url=None, redoc_url=None)
+app.mount("/static", StaticFiles(directory="static"), name="static")
 
 TEXT_FILTER_TYPE = 10
 
@@ -29,6 +39,31 @@ def get_text_filter(criterias):
 
     return ""
 
+
+@app.get("/redoc", include_in_schema=False)
+async def redoc_html(req: Request) -> HTMLResponse:
+    openapi_url = app.openapi_prefix + app.openapi_url
+    return get_redoc_html(
+        openapi_url=openapi_url,
+        title=app.title + " - Redoc",
+        redoc_js_url="/static/redoc.standalone.js",
+        redoc_favicon_url="/static/favicon.png",
+        with_google_fonts=False
+    )
+
+
+@app.get("/docs", include_in_schema=False)
+async def swagger_ui_html(req: Request) -> HTMLResponse:
+    openapi_url = app.openapi_prefix + app.openapi_url
+    return get_swagger_ui_html(
+        openapi_url=openapi_url,
+        title=app.title + " - Swagger UI",
+        oauth2_redirect_url=app.swagger_ui_oauth2_redirect_url,
+        init_oauth=app.swagger_ui_init_oauth,
+        swagger_js_url="/static/swagger-ui-bundle.js",
+        swagger_css_url="/static/swagger-ui.css",
+        swagger_favicon_url="/static/favicon.png"
+    )
 
 
 @app.get("/extensions/{publisher}/{package}/{version}/Microsoft.VisualStudio.Services.Icons.Default", 
@@ -47,10 +82,11 @@ async def get_package_manifest(publisher: str, package: str, version: str):
 
 
 @app.get("/extensions/{publisher}/{package}/{version}/Microsoft.VisualStudio.Services.Content.Details",
-         operation_id="getDetails", responses={200: {'content': {'text/markdown': {}}}})
+         operation_id="getDetails")
 async def get_package_details(publisher: str, package: str, version: str):
     extension = INDEXER.get_extension(publisher, package, version)
-    return extension.details
+    return Response(content=extension.details,
+                    media_type="text/markdown")
 
 
 @app.get("/extensions/{publisher}/{package}/{version}/Microsoft.VisualStudio.Services.Content.License",
