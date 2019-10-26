@@ -15,7 +15,6 @@ from starlette.requests import Request
 from starlette.staticfiles import StaticFiles
 from starlette.responses import FileResponse, Response, RedirectResponse, HTMLResponse
 
-
 from indexer import Indexer
 from controller import count
 from extension import Extension
@@ -82,7 +81,7 @@ async def get_package_manifest(publisher: str, package: str, version: str):
 
 
 @app.get("/extensions/{publisher}/{package}/{version}/Microsoft.VisualStudio.Services.Content.Details",
-         operation_id="getDetails")
+         operation_id="getDetails", responses={200: {'content': {'text/markdown': {}}}})
 async def get_package_details(publisher: str, package: str, version: str):
     extension = INDEXER.get_extension(publisher, package, version)
     return Response(content=extension.details,
@@ -176,7 +175,7 @@ class AcceptedTypes(str, Enum):
 class Update(BaseModel):
     path: str
     filename: str
-    type_names: List[AcceptedTypes]
+    type_names: List[AcceptedTypes] = ["IN_CLOSE_WRITE"]
 
 
 class StatusResponse(BaseModel):
@@ -201,6 +200,7 @@ def index_new_extension(update: Update):
 
 
 @app.post("/reset_index", response_model=StatusResponse)
-def reset():
+def reset_indexes():
+    """Reset all indexes"""
     INDEXER.reset()
     return {"status": "OK"}
