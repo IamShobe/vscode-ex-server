@@ -12,3 +12,20 @@ The application mocks the requests and responses of vscode extension tab, which 
 - Create a folder named `certs` inside the `docker-compose.yaml` folder.
 - Put there both `server.crt` file and `server.key` file.
 - Use the `docker-compose.yaml` file to start the application using `docker-compose up` command.
+
+
+### TODO
+#### Required
+- [X] Allow querying extensions.
+- [X] Support querying paganation.
+- [X] Allow filtering extensions using search.
+- [X] Support extensions Readme to be displayed in extension tab.
+- [X] Support extensions Icons.
+- [X] Support multiple versions of an extension.
+
+#### Advanced
+- [X] Serve extensions using nginx.
+- [ ] Add a website to display all the extensions (for web access).
+- [ ] Use a database to store all the extensions to support advanced features.
+- [ ] Support rating the extensions.
+- [ ] Support download statistics and popularity.
